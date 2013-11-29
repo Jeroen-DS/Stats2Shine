@@ -4,6 +4,7 @@
 package program;
 
 import java.io.IOException;
+import java.text.ParseException;
 
 import data.XMLStats;
 import fantasy.Team;
@@ -15,9 +16,10 @@ import fantasy.Team;
 public class RosterManagement {
 	
 	private static String[] positions = {"PG", "SG", "G", "SF", "PF", "F", "C", "UTIL"};
-	private static Team myTeam = new Team();
+	private static Team myTeam;
 	private static String key_xmlstats;
 	private static String key_yahoo;
+	private static String secret_yahoo;
 	
 	private static XMLStats xmlStats = new XMLStats();
 	
@@ -31,6 +33,14 @@ public class RosterManagement {
 	public static void main(String[] args) throws IOException {
 		key_xmlstats = args[0];
 		key_yahoo = args[1];
+		secret_yahoo = args[2];
+		
+		try {
+			myTeam = new Team();
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		Integer nbGamesProjected = manageGamesPlayed();
 		System.out.println(nbGamesProjected);
@@ -44,6 +54,8 @@ public class RosterManagement {
 	private static Integer manageGamesPlayed() throws IOException {
 		
 		Integer projTotalNbGamesPlayed = 0;
+		
+		myTeam.updateTeam(key_yahoo, secret_yahoo);
 		
 		// for each position
 		for (String position : positions) {
