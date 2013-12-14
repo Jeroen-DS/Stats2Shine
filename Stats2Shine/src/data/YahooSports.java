@@ -1,19 +1,16 @@
 package data;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 
 import javax.json.Json;
 import javax.json.JsonArray;
-import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
-import javax.json.JsonValue;
-import javax.json.stream.JsonParser;
 
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.builder.api.YahooApi;
@@ -25,6 +22,7 @@ import org.scribe.model.Verifier;
 import org.scribe.oauth.OAuthService;
 
 import fantasy.Player;
+import fantasy.Roster;
 
 /**
  * 
@@ -49,14 +47,12 @@ public class YahooSports {
 		 return jsonObject;
 	}
 	
-	public HashMap<Integer, Player> getRoster() throws MalformedURLException {
+	public Roster getRoster() throws MalformedURLException {
 		URL url = new URL("http://fantasysports.yahooapis.com/fantasy/v2/team/322.l.47722.t.2/roster/players?format=json");
 		Response response = this.auth.requestURL(url);
 		JsonObject jsonFantasyTeam = convertToJson(response);
 		
-		Set<String> test = jsonFantasyTeam.keySet();
-		
-		HashMap<Integer, Player> roster = new HashMap<Integer, Player>();
+		Roster roster = new Roster();
 		JsonArray jsonTeam = (JsonArray) ((JsonObject) jsonFantasyTeam.get("fantasy_content")).get("team");
 		JsonObject jsonRoster = (JsonObject) ((JsonObject) jsonTeam.get(1)).get("roster");
 		JsonObject jsonPlayers = (JsonObject) ((JsonObject) jsonRoster.get("0")).get("players");
@@ -74,35 +70,12 @@ public class YahooSports {
 			}
 			String teamName = jsonTemp.getString("editorial_team_full_name");
 			Player player = new Player(ysPlayerId, fullName, null, teamName);
-			roster.put(ysPlayerId, player);
+			
+			String position = ((JsonObject) ((JsonArray) ((JsonObject) jsonPlayer.get(1)).get("selected_position")).get(1)).getString("position");
+			roster.addPlayer(player, position);
 		}
 		
 		return roster;
-	}
-	
-	private void printResult(String jsonData) {
-		JsonParser parser = Json.createParser(new StringReader(jsonData));
-		while (parser.hasNext()) {
-			JsonParser.Event event = parser.next();
-			switch (event) {
-			case START_ARRAY:
-			case END_ARRAY:
-			case START_OBJECT:
-			case END_OBJECT:
-			case VALUE_FALSE:
-			case VALUE_NULL:
-			case VALUE_TRUE:
-				System.out.println(event.toString());
-				break;
-			case KEY_NAME:
-				System.out.print(event.toString() + " " + parser.getString() + " - ");
-				break;
-			case VALUE_STRING:
-			case VALUE_NUMBER:
-				System.out.println(event.toString() + " " + parser.getString());
-				break;
-			}
-		}
 	}
 	
 	class Authorisation {
@@ -127,7 +100,7 @@ public class YahooSports {
 			return authSucces;
 		}
 		
-		protected void authorise() {
+		protected void authorise() throws IOException {
 			
 			// Get the request token
 			Token requestToken = this.service.getRequestToken();
@@ -135,9 +108,8 @@ public class YahooSports {
 			System.out.println(this.service.getAuthorizationUrl(requestToken));
 			
 			// Get the access Token
-			Scanner in = new Scanner(System.in);
-			Verifier v = new Verifier(in.nextLine());
-			in.close();
+			Scanner sc = new Scanner(System.in);
+			Verifier v = new Verifier(sc.nextLine());
 			
 			setAccessToken(this.service.getAccessToken(requestToken, v));
 			
@@ -146,7 +118,12 @@ public class YahooSports {
 		
 		protected Response requestURL(URL url) {
 			if(!authSucces) {
-				authorise();
+				try {
+					authorise();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			
 			OAuthRequest request = new OAuthRequest(Verb.GET, url.toString());

@@ -24,6 +24,14 @@ public class Player {
 		this.team = team;
 	}
 
+	public Integer getYsPlayerId() {
+		return ysPlayerId;
+	}
+
+	public void setYsPlayerId(Integer ysPlayerId) {
+		this.ysPlayerId = ysPlayerId;
+	}
+
 	public String getName() {
 		return name;
 	}

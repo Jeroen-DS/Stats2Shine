@@ -3,8 +3,9 @@
  */
 package program;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.text.ParseException;
+import java.io.InputStreamReader;
 
 import data.XMLStats;
 import data.YahooSports;
@@ -15,8 +16,6 @@ import fantasy.Team;
  *
  */
 public class RosterManagement {
-	
-	private static String[] positions = {"PG", "SG", "G", "SF", "PF", "F", "C", "UTIL"};
 	private static Team myTeam;
 	private static String key_xmlstats;
 	private static String key_yahoo;
@@ -40,16 +39,10 @@ public class RosterManagement {
 		xmlStats = new XMLStats(key_xmlstats);
 		yahooSports = new YahooSports(key_yahoo, secret_yahoo);
 		
-		try {
-			myTeam = new Team(yahooSports);
-		} catch (ParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
+		myTeam = new Team(yahooSports, manualInputNbGamesPlayed());
 		sync();
 		
-		Integer nbGamesProjected = manageGamesPlayed();
+		manageGamesPlayed();
 
 	}
 	
@@ -89,6 +82,29 @@ public class RosterManagement {
 	 */
 	private static void sync() throws IOException {
 		myTeam.updateTeam(key_yahoo, secret_yahoo);
+	}
+	
+	private static Integer[] manualInputNbGamesPlayed() throws IOException {
+		Integer[] nbGamesPlayed = new Integer[] {0,0,0,0,0,0,0,0};
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		System.out.print("Number of games played at PG: ");
+		nbGamesPlayed[0] = new Integer(br.readLine());
+		System.out.print("Number of games played at SG: ");
+		nbGamesPlayed[1] = new Integer(br.readLine());
+		System.out.print("Number of games played at G: ");
+		nbGamesPlayed[2] = new Integer(br.readLine());
+		System.out.print("Number of games played at SF: ");
+		nbGamesPlayed[3] = new Integer(br.readLine());
+		System.out.print("Number of games played at PF: ");
+		nbGamesPlayed[4] = new Integer(br.readLine());
+		System.out.print("Number of games played at F: ");
+		nbGamesPlayed[5] = new Integer(br.readLine());
+		System.out.print("Number of games played at C: ");
+		nbGamesPlayed[6] = new Integer(br.readLine());
+		System.out.print("Number of games played at Util: ");
+		nbGamesPlayed[7] = new Integer(br.readLine());
+		
+		return nbGamesPlayed;
 	}
 
 }
