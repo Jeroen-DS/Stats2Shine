@@ -2,11 +2,17 @@ package data;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 
 import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 
 import org.scribe.builder.ServiceBuilder;
@@ -29,43 +35,49 @@ import fantasy.Player;
  * 
  */
 public class YahooSports {
-	private Token accessToken;
-	private String key;
-	private String secret;
+	
+	private Authorisation auth;
+	
+	public YahooSports(String key, String secret) {
+		this.auth = new Authorisation(key, secret);
+	}
 
-	/**
-	 * @param args
-	 */
-	public JsonObject requestURL(URL url) {
-		 Scanner in = new Scanner(System.in);
-		 // Create the OAuthService object
-		 OAuthService service = new ServiceBuilder().provider(YahooApi.class).apiKey(key).apiSecret(secret).build();
-		 // Get the request token
-		 Token requestToken = service.getRequestToken();
-		 // Making the user validate your request token
-		 System.out.println(service.getAuthorizationUrl(requestToken));
-		
-		 // Get the access Token
-		 Verifier v = new Verifier(in.nextLine());
-		 this.accessToken = service.getAccessToken(requestToken, v);
-		 // Sign request
-		 OAuthRequest request = new OAuthRequest(Verb.GET, url.toString());
-		 service.signRequest(this.accessToken, request);
-		 Response response = request.send();
-		 System.out.println(response.getBody());
+	public JsonObject convertToJson(Response response) {
 		 JsonReader reader = Json.createReader(new StringReader(response.getBody()));
 		 JsonObject jsonObject = (JsonObject) reader.read();
-		 in.close();
+
 		 return jsonObject;
 	}
 	
-	public Player getPlayer(String key, String secret, String position) throws MalformedURLException {
-		this.key = key;
-		this.secret = secret;
+	public HashMap<Integer, Player> getRoster() throws MalformedURLException {
 		URL url = new URL("http://fantasysports.yahooapis.com/fantasy/v2/team/322.l.47722.t.2/roster/players?format=json");
-		JsonObject jsonRoster = requestURL(url);
-		Player player = new Player();
-		return player;
+		Response response = this.auth.requestURL(url);
+		JsonObject jsonFantasyTeam = convertToJson(response);
+		
+		Set<String> test = jsonFantasyTeam.keySet();
+		
+		HashMap<Integer, Player> roster = new HashMap<Integer, Player>();
+		JsonArray jsonTeam = (JsonArray) ((JsonObject) jsonFantasyTeam.get("fantasy_content")).get("team");
+		JsonObject jsonRoster = (JsonObject) ((JsonObject) jsonTeam.get(1)).get("roster");
+		JsonObject jsonPlayers = (JsonObject) ((JsonObject) jsonRoster.get("0")).get("players");
+		
+		for(int i = 0; i < 13; i++) {
+			JsonArray jsonPlayer = (JsonArray) ((JsonObject) jsonPlayers.get(String.valueOf(i))).get("player");
+			JsonArray jsonPlayerInfo = (JsonArray) jsonPlayer.get(0);
+			Integer ysPlayerId = Integer.parseInt(((JsonObject) jsonPlayerInfo.get(1)).getString("player_id"));
+			JsonObject jsonName = (JsonObject) ((JsonObject) jsonPlayerInfo.get(2)).get("name");
+			String fullName =  jsonName.getString("full");
+			System.out.println(fullName);
+			JsonObject jsonTemp = (JsonObject) jsonPlayerInfo.get(5);
+			if (!jsonTemp.containsKey("editorial_team_full_name")) {
+				jsonTemp = (JsonObject) jsonPlayerInfo.get(6);
+			}
+			String teamName = jsonTemp.getString("editorial_team_full_name");
+			Player player = new Player(ysPlayerId, fullName, null, teamName);
+			roster.put(ysPlayerId, player);
+		}
+		
+		return roster;
 	}
 	
 	private void printResult(String jsonData) {
@@ -92,5 +104,56 @@ public class YahooSports {
 			}
 		}
 	}
-
+	
+	class Authorisation {
+		private boolean authSucces;
+		OAuthService service;
+		private Token accessToken;
+		
+		public Authorisation(String key, String secret) {
+			this.service = new ServiceBuilder().provider(YahooApi.class).apiKey(key).apiSecret(secret).build();
+			this.authSucces = false;
+		}
+		
+		protected void setAccessToken(Token accessToken) {
+			this.accessToken = accessToken;
+		}
+		
+		protected Token getAccessToken() {
+			return accessToken;
+		}
+		
+		protected boolean isGood() {
+			return authSucces;
+		}
+		
+		protected void authorise() {
+			
+			// Get the request token
+			Token requestToken = this.service.getRequestToken();
+			// Making the user validate your request token
+			System.out.println(this.service.getAuthorizationUrl(requestToken));
+			
+			// Get the access Token
+			Scanner in = new Scanner(System.in);
+			Verifier v = new Verifier(in.nextLine());
+			in.close();
+			
+			setAccessToken(this.service.getAccessToken(requestToken, v));
+			
+			this.authSucces = true;
+		}
+		
+		protected Response requestURL(URL url) {
+			if(!authSucces) {
+				authorise();
+			}
+			
+			OAuthRequest request = new OAuthRequest(Verb.GET, url.toString());
+			this.service.signRequest(accessToken, request);
+			Response response = request.send();
+			
+			return response;
+		}
+	}
 }

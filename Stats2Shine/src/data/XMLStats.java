@@ -2,10 +2,10 @@ package data;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 
@@ -15,7 +15,6 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
-import javax.json.stream.JsonParser;
 
 /**
  * 
@@ -39,6 +38,12 @@ public class XMLStats {
 	static final String ISO_8601_FMT = "yyyy-MM-dd'T'HH:mm:ssXXX";
 	static final SimpleDateFormat XMLSTATS_DATE = new SimpleDateFormat(
 			ISO_8601_FMT);
+	
+	private HashMap<String, Integer> nbGamesPlayedByTeam = new HashMap<String, Integer>();
+	
+	public XMLStats(String key) {
+		this.key = key;
+	}
 
 	private JsonObject requestURL(URL url) {
 		InputStream in = null;
@@ -68,27 +73,37 @@ public class XMLStats {
 		return jsonObject;
 	}
 
-	public Integer getNbGamesPlayedByTeam(String key_xmlstats, String fullTeamName) throws IOException {
+	private void syncNbGamesPlayedByTeam() throws IOException {
 		try {
-			URL url = new URL("https://erikberg.com/nba/standings/20131127.json");
+			URL url = new URL("https://erikberg.com/nba/standings/20131214.json");
 			JsonObject jsonStandings = requestURL(url);
 
 			JsonArray jsonStanding = (JsonArray) jsonStandings.get("standing");
 			Iterator<JsonValue> it = jsonStanding.iterator();
 
+			nbGamesPlayedByTeam.clear();
 			while (it.hasNext()) {
 				JsonObject jsonObject = (JsonObject) it.next();
-				String firstName = jsonObject.get("first_name").toString();
-				String lastName = jsonObject.get("last_name").toString();
-				if (fullTeamName.equals(firstName.substring(1, firstName.length() - 1) + " " + lastName.substring(1, lastName.length() - 1))) {
-					JsonNumber jsonGamesPlayed = (JsonNumber) jsonObject.get("games_played");
-					return jsonGamesPlayed.intValue();
-				}
+				String firstName = jsonObject.getString("first_name");
+				String lastName = jsonObject.getString("last_name");
+				String fullName = firstName + " " + lastName;
+				Integer gamesPlayed = jsonObject.getJsonNumber("games_played").intValue();
+				
+				nbGamesPlayedByTeam.put(fullName, gamesPlayed);
 			}
 		} catch (IOException exception) {
 			System.out.println("Unexpected JSON-stream");
 		}
-		return null;
+	}
+
+	public HashMap<String, Integer> getGamesPlayedByTeams() {
+		try {
+			syncNbGamesPlayedByTeam();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return nbGamesPlayedByTeam;
 	}
 
 	
