@@ -6,6 +6,7 @@ package fantasy;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -93,29 +94,53 @@ public class Team {
 
 		return null;
 	}
+	
+	public void updateGamesToPlay(HashMap<String, Integer> gamesPlayedByTeam) {
+		HashMap<Integer, Player> players = this.roster.getPlayers();
+		for(Integer playerId : players.keySet()) {
+			Player player = players.get(playerId);
+			String team = player.getTeam();
+			player.setTeamGamesToPlay(82 - gamesPlayedByTeam.get(team));
+		}
+	}
 
-	public void printGamesToPlay(HashMap<String, Integer> gamesPlayedByTeam) {
-		for (Integer ysPlayerId : roster.getStarters()) {
-			Player player = roster.get(ysPlayerId);
-			String position = roster.getPosition(ysPlayerId);
-			String teamPlayer = player.getTeam();
-
-			// get number of games to play for each player
-			Integer nbGamesToPlayByTeam = 82 - gamesPlayedByTeam.get(teamPlayer);
-			Integer nbGamesPlayedAtPosition = 0;
-			if (Util.positionToIndex(position) != null) {
-				nbGamesPlayedAtPosition = nbGamesPlayed[Util.positionToIndex(position)];
-				if(Util.positionToIndex(position) > 5) {
-					nbGamesPlayedAtPosition = nbGamesPlayedAtPosition/2;
-				}
+	public void printGamesToPlay() {
+		Integer totalGamesPlayed = 0;
+		Integer totalGamesProjected = 0;
+		
+		for (int i = 0; i < 8; i++) {
+			String str = "";
+			String position = Util.indexToPosition(i);
+			str += position + ":";
+			ArrayList<Player> playersOnPosition = roster.getPlayers(Util.indexToPosition(i));
+			for (Player pl : playersOnPosition) {
+				str += " " + pl.getName() + " (" + pl.getTeamAbbr() + ")";
 			}
 			
-			Integer total = nbGamesPlayedAtPosition + nbGamesToPlayByTeam;
-			Integer diff = total - 82;
+			Integer projection = 0;
+			Integer maxGamesProjection = 0;
+			projection += nbGamesPlayed[i];
+			totalGamesPlayed += nbGamesPlayed[i];
+			str += ": " + nbGamesPlayed[i];
+			
+			for (Player pl : playersOnPosition) {
+				projection += pl.getTeamGamesToPlay();
+				maxGamesProjection += 82;
+				
+				str += " + " + pl.getTeamGamesToPlay();
+			}
+			
+			totalGamesProjected += projection;
+			Integer diff = projection - maxGamesProjection;
+			str += " = " + projection + " (" + diff + ")";
 
-			System.out.println(position + ": " + player.getName() + " ("
-					+ teamPlayer + "): " + nbGamesPlayedAtPosition + " + " + nbGamesToPlayByTeam + " = " + total + " (" + diff + ")");
+			System.out.println(str);
 		}
+		
+		Integer diffTotal = totalGamesProjected - 820;
+		
+		System.out.println("Total games played: " + totalGamesPlayed);
+		System.out.println("Total games projected: " + totalGamesProjected + " (" + diffTotal + ")");
 
 	}
 

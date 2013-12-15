@@ -49,7 +49,8 @@ public class RosterManagement {
 	private static Integer manageGamesPlayed() {
 		Integer projTotalNbGamesPlayed = 0;
 		
-		myTeam.printGamesToPlay(xmlStats.getGamesPlayedByTeams());
+		myTeam.updateGamesToPlay(xmlStats.getGamesPlayedByTeams());
+		myTeam.printGamesToPlay();
 		
 		
 //		// for each position

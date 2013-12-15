@@ -74,7 +74,7 @@ public class XMLStats {
 
 	private void syncNbGamesPlayedByTeam() throws IOException {
 		try {
-			URL url = new URL("https://erikberg.com/nba/standings/20131214.json");
+			URL url = new URL("https://erikberg.com/nba/standings/20131215.json");
 			JsonObject jsonStandings = requestURL(url);
 
 			JsonArray jsonStanding = (JsonArray) jsonStandings.get("standing");

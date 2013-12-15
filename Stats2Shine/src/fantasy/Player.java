@@ -15,13 +15,15 @@ public class Player {
 	private String name;
 	private Collection<String> ysPositions = new HashSet<String>();
 	private String team;
+	private String teamAbbr;
 	private Integer teamGamesToPlay;
 	
-	public Player(Integer ysPlayerId, String name, Collection<String> ysPositions, String team) {
+	public Player(Integer ysPlayerId, String name, Collection<String> ysPositions, String team, String teamAbbr) {
 		this.ysPlayerId = ysPlayerId;
 		this.name = name;
 		this.ysPositions = ysPositions;
 		this.team = team;
+		this.teamAbbr = teamAbbr;
 	}
 
 	public Integer getYsPlayerId() {
@@ -54,6 +56,14 @@ public class Player {
 
 	public void setTeam(String team) {
 		this.team = team;
+	}
+
+	public String getTeamAbbr() {
+		return teamAbbr;
+	}
+
+	public void setTeamAbbr(String teamAbbr) {
+		this.teamAbbr = teamAbbr;
 	}
 
 	public Integer getTeamGamesToPlay() {

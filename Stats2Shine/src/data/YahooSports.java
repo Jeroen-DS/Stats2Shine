@@ -1,7 +1,5 @@
 package data;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -11,6 +9,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonValue;
 
 import org.scribe.builder.ServiceBuilder;
 import org.scribe.builder.api.YahooApi;
@@ -60,16 +59,32 @@ public class YahooSports {
 		for(int i = 0; i < 13; i++) {
 			JsonArray jsonPlayer = (JsonArray) ((JsonObject) jsonPlayers.get(String.valueOf(i))).get("player");
 			JsonArray jsonPlayerInfo = (JsonArray) jsonPlayer.get(0);
-			Integer ysPlayerId = Integer.parseInt(((JsonObject) jsonPlayerInfo.get(1)).getString("player_id"));
-			JsonObject jsonName = (JsonObject) ((JsonObject) jsonPlayerInfo.get(2)).get("name");
-			String fullName =  jsonName.getString("full");
-			System.out.println(fullName);
-			JsonObject jsonTemp = (JsonObject) jsonPlayerInfo.get(5);
-			if (!jsonTemp.containsKey("editorial_team_full_name")) {
-				jsonTemp = (JsonObject) jsonPlayerInfo.get(6);
+			
+			Integer playerId = 0;
+			String fullName = null;
+			String teamName = null;
+			String teamAbbr = null;
+			for(int j = 0; j < jsonPlayerInfo.size(); j++) {
+				if (jsonPlayerInfo.get(j).getValueType() == JsonValue.ValueType.OBJECT) {
+					JsonObject jsonTemp = (JsonObject) jsonPlayerInfo.get(j);
+
+					if (jsonTemp.containsKey("player_id")) {
+						playerId = Integer.parseInt(jsonTemp
+								.getString("player_id"));
+					} else if (jsonTemp.containsKey("name")) {
+						JsonObject jsonName = (JsonObject) (jsonTemp)
+								.get("name");
+						fullName = jsonName.getString("full");
+					} else if (jsonTemp.containsKey("editorial_team_full_name")) {
+						teamName = jsonTemp
+								.getString("editorial_team_full_name");
+					} else if (jsonTemp.containsKey("editorial_team_abbr")) {
+						teamAbbr = jsonTemp.getString("editorial_team_abbr");
+					}
+				}
 			}
-			String teamName = jsonTemp.getString("editorial_team_full_name");
-			Player player = new Player(ysPlayerId, fullName, null, teamName);
+			
+			Player player = new Player(playerId, fullName, null, teamName, teamAbbr);
 			
 			String position = ((JsonObject) ((JsonArray) ((JsonObject) jsonPlayer.get(1)).get("selected_position")).get(1)).getString("position");
 			roster.addPlayer(player, position);

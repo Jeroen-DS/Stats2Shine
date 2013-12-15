@@ -1,5 +1,6 @@
 package fantasy;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -36,11 +37,35 @@ public class Roster {
 			}
 		}
 	}
+	
+	public ArrayList<Player> getPlayers(String position) {
+		ArrayList<Player> playersOnPosition = new ArrayList<Player>();
+		Integer[] indeces = indexConverter.get(position);
+		if (indeces != null) {
+			for (int i = 0; i < indeces.length; i++) {
+				Integer index = indeces[i];
+				playersOnPosition.add(players.get(starters[index]));
+			}
+		}
+		return playersOnPosition;
+	}
 
 	public Set<Integer> playerKeySet() {
 		return players.keySet();
 	}
 	
+	public HashMap<Integer, Player> getPlayers() {
+		return players;
+	}
+
+	public void setPlayers(HashMap<Integer, Player> players) {
+		this.players = players;
+	}
+
+	public void setStarters(Integer[] starters) {
+		this.starters = starters;
+	}
+
 	public Integer[] getStarters() {
 		return starters;
 	}
